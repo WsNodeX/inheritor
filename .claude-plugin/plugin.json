@@ -1,0 +1,12 @@
+{
+  "name": "inheritor",
+  "version": "1.0.0",
+  "description": "Write and review code for whoever reads it next — usually you, three months on, at 3am.",
+  "author": { "name": "WsNodeX", "url": "https://github.com/WsNodeX" },
+  "license": "MIT",
+  "homepage": "https://github.com/WsNodeX/inheritor",
+  "repository": "https://github.com/WsNodeX/inheritor",
+  "keywords": ["code-review", "maintainability", "agent-skills", "claude-code"],
+  "skills": ["./.agents/skills/inheritor"],
+  "commands": ["./.claude/commands/inheritor.md"]
+}

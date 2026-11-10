@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+# Workflow YAML must be LF
+.github/workflows/* text eol=lf
+
+# PowerShell on Windows keeps CRLF
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+# Binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.zip binary

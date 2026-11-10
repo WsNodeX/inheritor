@@ -1,0 +1,17 @@
+{
+  "name": "inheritor",
+  "version": "1.0.0",
+  "description": "Eight rules plus a checker for code that withholds what a future reader needs. Finds unnamed literals, comments that restate the code, TODOs with no exit condition, unactionable errors, and implicit contracts.",
+  "author": "WsNodeX",
+  "license": "MIT",
+  "homepage": "https://github.com/WsNodeX/inheritor",
+  "repository": "https://github.com/WsNodeX/inheritor",
+  "keywords": ["code-review", "maintainability", "agent-skills", "codex"],
+  "skills": [
+    {
+      "name": "inheritor",
+      "path": ".agents/skills/inheritor/SKILL.md",
+      "description": "Write and review code for the person who will read it at 3am."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[command]
+name = "inheritor"
+description = "Find and fix code that withholds what a future reader needs"
+prompt = """
+Load the inheritor skill from .agents/skills/inheritor/SKILL.md and apply it to {{args}}.
+
+1. Run the checker first: python scripts/inheritance-check.py --path <path>. Show raw output.
+2. Triage by rule. Say which findings a reader would actually stumble on and which
+   are noise here. Be specific about line numbers.
+3. Fix only what earns it: add the missing fact (name, source, exit condition,
+   actionable message). Do not restructure working code.
+4. Re-run the checker on touched files. Report before/after counts.
+
+Never add a comment that restates the code. Never invent the reason for a number —
+if it is not in the repo or git history, say so and ask.
+
+The person reading this code has no memory of writing it.
+"""

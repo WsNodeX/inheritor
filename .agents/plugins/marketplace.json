@@ -1,0 +1,16 @@
+{
+  "name": "inheritor",
+  "version": "1.0.0",
+  "description": "Write and review code for whoever reads it next.",
+  "author": { "name": "WsNodeX", "url": "https://github.com/WsNodeX" },
+  "license": "MIT",
+  "repository": "https://github.com/WsNodeX/inheritor",
+  "plugins": [
+    {
+      "name": "inheritor",
+      "source": "./",
+      "description": "Eight rules for writing code a stranger can debug, plus a checker.",
+      "version": "1.0.0"
+    }
+  ]
+}

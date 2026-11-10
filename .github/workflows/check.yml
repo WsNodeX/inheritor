@@ -1,0 +1,87 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # The checker must survive its own check. An early version reported two
+      # findings against itself, because it matched the word TODO inside the
+      # docstring that documents rule 3.
+      - name: Checker on itself
+        run: |
+          out=$(python scripts/inheritance-check.py --path scripts/inheritance-check.py)
+          echo "$out"
+          echo "$out" | grep -q "0 warn" || {
+            echo "::error::the checker reports findings against itself"
+            exit 1
+          }
+
+      - name: Validate plugin manifests
+        run: |
+          set -e
+          for f in .claude-plugin/marketplace.json .claude-plugin/plugin.json \
+                   .codex-plugin/plugin.json .agents/plugins/marketplace.json; do
+            python -c "import json,sys; json.load(open(sys.argv[1])); print('ok', sys.argv[1])" "$f"
+          done
+
+      - name: Validate SKILL.md front matter
+        run: |
+          set -e
+          python - <<'PY'
+          import pathlib
+          p = pathlib.Path(".agents/skills/inheritor/SKILL.md")
+          t = p.read_text(encoding="utf-8")
+          assert t.startswith("---"), "SKILL.md must open with YAML front matter"
+          fm = t.split("---", 2)[1]
+          for key in ("name:", "description:"):
+              assert key in fm, f"front matter missing {key}"
+          print("ok SKILL.md")
+          PY
+
+      - name: Check referenced assets exist
+        run: |
+          set -e
+          python - <<'PY'
+          import re, pathlib, sys
+          bad = []
+          for readme in pathlib.Path(".").rglob("README.md"):
+              if ".git" in readme.parts:
+                  continue
+              text = readme.read_text(encoding="utf-8")
+              for m in re.finditer(r'(?:src|srcset)="([^"]+)"', text):
+                  u = m.group(1)
+                  if u.startswith(("http", "data:")):
+                      continue
+                  if not (readme.parent / u.lstrip("./")).resolve().exists():
+                      bad.append(f"{readme}: {u}")
+          if bad:
+              print("\n".join(bad)); sys.exit(1)
+          print("all local assets present")
+          PY
+
+      - name: Smoke test against a known-clean file
+        run: |
+          printf '%s\n' \
+            '# Discount tiers, from the 2026 pricing memo (finance/PRICING-2026.md).' \
+            'TIER_THRESHOLD = 5000' \
+            '' \
+            'def apply_tier(total: int, threshold: int = TIER_THRESHOLD) -> int:' \
+            '    """Return the discounted total. Does not mutate inputs."""' \
+            '    return total - threshold // 100 if total >= threshold else total' \
+            > /tmp/clean.py
+          python scripts/inheritance-check.py --path /tmp/clean.py

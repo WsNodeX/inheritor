@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="400" viewBox="0 0 880 400" role="img" aria-label="Before and after: an unexplained literal becomes a named constant with a source">
+  <style>
+    .t { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+    .lbl { font-family: ui-sans-serif, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .05em; }
+    .cm { fill: #6e7781; }
+  </style>
+  <defs>
+    <filter id="sh" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <rect width="880" height="400" fill="#ffffff"/>
+
+  <!-- ===== BEFORE ===== -->
+  <g filter="url(#sh)"><rect x="24" y="24" width="392" height="352" rx="12" fill="#fff8f8" stroke="#ffc9c9"/></g>
+  <rect x="24" y="24" width="392" height="40" rx="12" fill="#ffd8d8"/>
+  <rect x="24" y="52" width="392" height="12" fill="#ffd8d8"/>
+  <text x="44" y="50" class="lbl" fill="#c92a2a">BEFORE · works, explains nothing</text>
+
+  <text x="44" y="94" class="t" fill="#212529">def flush_if_big(batch):</text>
+  <text x="56" y="118" class="t" fill="#c92a2a">if len(batch) &gt; 1000:</text>
+  <text x="68" y="142" class="t" fill="#212529">flush()</text>
+  <text x="44" y="180" class="t" fill="#212529">def retry(fn):</text>
+  <text x="56" y="204" class="t" fill="#c92a2a">for i in range(3):</text>
+  <text x="68" y="228" class="t" fill="#212529">try: return fn()</text>
+  <text x="68" y="252" class="t" fill="#c92a2a">except: sleep(0.5)</text>
+
+  <line x1="44" y1="278" x2="396" y2="278" stroke="#ffc9c9"/>
+  <text x="44" y="302" class="t" fill="#c92a2a">? why 1000</text>
+  <text x="44" y="324" class="t" fill="#c92a2a">? why 3 attempts</text>
+  <text x="44" y="346" class="t" fill="#c92a2a">? why 0.5s  (and bare except!)</text>
+
+  <!-- ===== arrow ===== -->
+  <line x1="424" y1="200" x2="436" y2="200" stroke="#adb5bd" stroke-width="2"/>
+  <path d="M436 193 L446 200 L436 207 Z" fill="#adb5bd"/>
+
+  <!-- ===== AFTER ===== -->
+  <g filter="url(#sh)"><rect x="456" y="24" width="400" height="352" rx="12" fill="#f4fdf7" stroke="#b2f2bb"/></g>
+  <rect x="456" y="24" width="400" height="40" rx="12" fill="#d3f9d8"/>
+  <rect x="456" y="52" width="400" height="12" fill="#d3f9d8"/>
+  <text x="476" y="50" class="lbl" fill="#2b8a3e">AFTER · same behaviour, intent kept</text>
+
+  <text x="476" y="90" class="t" fill="#6e7781"># vendor max for one write; over it returns 413</text>
+  <text x="476" y="112" class="t" fill="#2b8a3e">MAX_BATCH = 1000</text>
+  <text x="476" y="136" class="t" fill="#212529">def flush_if_big(batch):</text>
+  <text x="488" y="160" class="t" fill="#212529">if len(batch) &gt; MAX_BATCH:</text>
+  <text x="500" y="184" class="t" fill="#212529">flush()</text>
+
+  <text x="476" y="216" class="t" fill="#6e7781"># 3 tries covers the 2% transient rate</text>
+  <text x="476" y="238" class="t" fill="#6e7781"># seen over 1k calls; 0.5s backoff is</text>
+  <text x="476" y="260" class="t" fill="#6e7781"># under the upstream's 1s rate window</text>
+  <text x="476" y="282" class="t" fill="#212529">def retry(fn):</text>
+  <text x="488" y="306" class="t" fill="#2b8a3e">for _ in range(MAX_ATTEMPTS):</text>
+  <text x="500" y="330" class="t" fill="#212529">except Transient as e: ...</text>
+
+  <text x="476" y="362" class="t" fill="#2b8a3e">every number has a source</text>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "name": "inheritor",
+  "owner": { "name": "WsNodeX", "url": "https://github.com/WsNodeX" },
+  "metadata": {
+    "description": "Write and review code for whoever reads it next — usually you, three months on, at 3am.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "inheritor",
+      "source": "./",
+      "description": "Eight rules plus a checker for the places where code withholds what a future reader needs: unnamed literals, comments that restate the code, TODOs with no exit condition, errors you cannot act on, implicit contracts.",
+      "version": "1.0.0",
+      "author": { "name": "WsNodeX" },
+      "license": "MIT",
+      "keywords": ["code-review", "maintainability", "agent-skills", "documentation"]
+    }
+  ]
+}

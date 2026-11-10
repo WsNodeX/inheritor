@@ -1,0 +1,39 @@
+---
+description: inheritor — write code for whoever reads it next
+globs: ["**/*.py", "**/*.java", "**/*.ts", "**/*.go"]
+alwaysApply: false
+---
+
+# inheritor
+
+The person who reads this code is not the person who wrote it. It is the same
+person, three months later, at 3am, with no memory of the decision.
+
+Before writing or keeping a line, ask: if this breaks at 3am, does the code tell
+me what it was trying to do?
+
+## Rules
+
+1. **Name for the search box** — if you cannot grep the name and land on the right
+   place, the name is wrong.
+2. **Comments answer why** — a comment that survives deleting the line it describes
+   was never a comment. Rename instead.
+3. **Every number gets a source** — a bare literal is a decision with its
+   justification deleted.
+4. **Errors must be actionable** — say what happened, with what input, and what to
+   check next. Never interpolate secrets.
+5. **A TODO needs an exit condition** — what is wrong, why not now, and what makes
+   it safe to remove.
+6. **Give each module a map** — entry point, data in, data out, invariants.
+7. **Commit says why** — the diff already says what.
+8. **No implicit contracts** — if it assumes sorted / non-empty / ASCII / idempotent,
+   write it down or enforce it.
+
+## Verify
+
+```bash
+python scripts/inheritance-check.py --path .
+```
+
+R1 and R6 are advisory. Fix the ones a reader would stumble on; blanket-fixing
+produces noise.
