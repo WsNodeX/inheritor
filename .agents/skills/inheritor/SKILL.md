@@ -196,6 +196,12 @@ Reports, per file:
 - functions with no docstring whose name does not explain its contract
 - error messages that do not name the operation
 
+**Language coverage.** Rules 1, 4, 6 and 8 need a Python AST and run on `.py` only.
+The TODO rule reads comments directly, so it also covers `.java`, `.ts`, `.tsx`,
+`.js`, `.jsx`, `.go`, `.rs`, `.c`, `.h`, `.cpp`, `.hpp`, `.cs`, `.kt` and `.swift`
+— comments only, not code. When reviewing a non-Python file, apply rules 1, 4, 6
+and 8 by reading, and never claim the checker verified them.
+
 ### 2. Fix by evidence, not by taste
 
 For each finding, the question is not "is this ugly" but "can a reader recover the

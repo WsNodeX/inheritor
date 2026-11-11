@@ -57,6 +57,9 @@ SKIP_DIRS = {
     ".git", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache",
     "node_modules", ".venv", "venv", "build", "dist", "target", "site-packages",
     "examples",
+    # Test fixtures contain the violations on purpose — scanning them reports the
+    # test data as defects. Same reason `examples` is here.
+    "fixtures",
 }
 
 
@@ -75,11 +78,94 @@ class Finding:
         return {k: getattr(self, k) for k in self.__slots__}
 
 
+# Extensions the text-level rules can read. Only rule 3 works without a parser;
+# the other four need an AST and are Python-only. Claiming more would be a lie
+# the tool cannot back up — and the comment above deliberately avoids naming the
+# marker word, because this file is scanned by itself and would report it.
+PY_SUFFIXES = {".py"}
+C_STYLE_SUFFIXES = {".java", ".ts", ".tsx", ".js", ".jsx", ".go", ".rs", ".c", ".h", ".cpp", ".hpp", ".cs", ".kt", ".swift"}
+SCAN_SUFFIXES = PY_SUFFIXES | C_STYLE_SUFFIXES
+
+
 def iter_sources(root: Path):
-    for p in sorted(root.rglob("*.py")):
+    for p in sorted(root.rglob("*")):
+        if p.suffix.lower() not in SCAN_SUFFIXES:
+            continue
         if SKIP_DIRS & set(p.parts):
             continue
+        # A .d.ts or generated file is not something a person reads to understand
+        # intent; skip the usual build-output suffixes.
+        if p.name.endswith((".min.js", ".bundle.js", ".d.ts")):
+            continue
         yield p
+
+
+def c_style_comments(text: str) -> list[tuple[int, str]]:
+    """
+    Pull `//` and `/* */` comments out of a C-family source file.
+
+    Written as a small state machine rather than a regex because a regex cannot
+    tell a comment from the inside of a string: `url = "http://x"` contains `//`,
+    and `s = "/* not a comment */"` contains a block-comment opener. Both appear
+    constantly in real code, and both produce false positives if you scan lines.
+
+    Returns (1-based line number, comment text) pairs.
+    """
+    out: list[tuple[int, str]] = []
+    i = 0
+    line = 1
+    n = len(text)
+    # Quote characters that start a string in this family of languages.
+    quotes = "\"'`"
+
+    while i < n:
+        ch = text[i]
+
+        if ch == "\n":
+            line += 1
+            i += 1
+            continue
+
+        # String literal: consume to its closing quote, honouring backslash escapes.
+        if ch in quotes:
+            q = ch
+            i += 1
+            while i < n:
+                if text[i] == "\\":
+                    i += 2
+                    continue
+                if text[i] == q:
+                    i += 1
+                    break
+                if text[i] == "\n":
+                    line += 1
+                i += 1
+            continue
+
+        # Line comment.
+        if ch == "/" and i + 1 < n and text[i + 1] == "/":
+            start = i
+            while i < n and text[i] != "\n":
+                i += 1
+            out.append((line, text[start:i]))
+            continue
+
+        # Block comment — may span lines.
+        if ch == "/" and i + 1 < n and text[i + 1] == "*":
+            start_line = line
+            i += 2
+            start = i
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                if text[i] == "\n":
+                    line += 1
+                i += 1
+            out.append((start_line, text[start:i]))
+            i += 2
+            continue
+
+        i += 1
+
+    return out
 
 
 def _literals_that_need_no_name(tree: ast.AST) -> set[int]:
@@ -152,31 +238,40 @@ def check_todos(path: Path, rel: str) -> list[Finding]:
     """
     Rule 3 — a TODO with no exit condition.
 
-    Reads real COMMENT tokens via tokenize, not raw lines. A line-based scan also
+    Python goes through real COMMENT tokens via tokenize. A line-based scan also
     matches the word TODO inside docstrings and string literals — including this
     file's own docstring, which explains the rule and would otherwise report
     itself. Citing a rule is not violating it.
-    """
-    import io
-    import tokenize
 
+    Every other supported language goes through c_style_comments(), which is the
+    same idea implemented by hand: string literals are consumed before comments
+    are looked for, so a URL in a string is not read as a comment.
+    """
     out = []
     try:
         source = path.read_text(encoding="utf-8", errors="replace")
-        tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
-    except (OSError, tokenize.TokenError, IndentationError):
+    except OSError:
         return out
 
-    for tok in tokens:
-        if tok.type != tokenize.COMMENT:
-            continue
-        text = tok.string
+    if path.suffix.lower() in PY_SUFFIXES:
+        import io
+        import tokenize
+
+        try:
+            tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
+        except (tokenize.TokenError, IndentationError):
+            return out
+        candidates = [(tok.start[0], tok.string) for tok in tokens if tok.type == tokenize.COMMENT]
+    else:
+        candidates = c_style_comments(source)
+
+    for lineno, text in candidates:
         if not re.search(r"\b(TODO|FIXME|XXX|HACK)\b", text, re.IGNORECASE):
             continue
         if EXIT_CONDITION.search(text):
             continue
         out.append(Finding(
-            rel, tok.start[0], "R3", "warn",
+            rel, lineno, "R3", "warn",
             "TODO has no exit condition — add when it is safe to remove",
             text.strip()[:90],
         ))
@@ -287,6 +382,12 @@ def check_unsignalled_mutation(tree: ast.AST, path: str) -> list[Finding]:
 def analyze(path: Path, rel: str) -> list[Finding]:
     findings: list[Finding] = []
     findings.extend(check_todos(path, rel))
+
+    # Rules 1, 4, 6 and 8 need an AST. For a non-Python file the text-level rule
+    # above is the whole check — saying so is part of the report, not a footnote.
+    if path.suffix.lower() not in PY_SUFFIXES:
+        return findings
+
     try:
         tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
     except SyntaxError as e:

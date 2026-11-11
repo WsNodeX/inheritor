@@ -16,8 +16,8 @@
 
 ---
 
-An Agent Skill that finds the places where code withholds what a future reader
-needs, and fixes them.
+An Agent Skill that finds where code withholds what the next reader needs, and
+fixes it.
 
 ## The failure it targets
 
@@ -42,14 +42,8 @@ the author assume, where do I look next. The first version answers none.
 git clone https://github.com/WsNodeX/inheritor ~/.claude/skills/inheritor
 ```
 
-Or as a Claude Code plugin:
-
-```bash
-/plugin marketplace add WsNodeX/inheritor
-/plugin install inheritor
-```
-
-Then point it at code — `Use the inheritor skill on src/.` — or run the checker:
+Or `/plugin marketplace add WsNodeX/inheritor`. Point it at code with `Use the
+inheritor skill on src/.`, or run the checker:
 
 ```bash
 python scripts/inheritance-check.py --path src/
@@ -85,22 +79,23 @@ judgement; `references/patterns.md` covers them with before/after pairs.
 warnings on a healthy codebase; a tool that cries wolf gets ignored. Rule 6 now
 fires only on public functions with two or more unannotated parameters.
 
-**Not tell you to add comments.** A comment restating the code is worse than none:
-it rots while looking authoritative. The fix for rule 2 is usually a better name.
+**Not tell you to add comments** — a comment restating the code is worse than none.
+The fix for rule 2 is usually a better name.
 
 ## Why this exists
 
 Most code-quality advice optimizes the code. This optimizes the reader.
 
 The two disagree more often than you would expect: a clever one-liner with an honest
-name beats a six-line expansion nobody can follow. Rule #3 earns its keep because an
+name beats a six-line expansion nobody can follow. Rule 1 earns its keep because an
 unexplained literal is a decision with its justification deleted — the most common
 way a codebase forgets why it works.
 
 ## Limitations
 
-- **Python only, for now.** The checker uses `ast` and `tokenize`; the prose rules
-  are language-agnostic.
+- **Four of the five rules are Python-only.** Rules 1, 4, 6 and 8 need an `ast`.
+  Rule 3 reads comments directly, so it also runs on Java, TS, JS, Go, Rust, C,
+  C++, C#, Kotlin and Swift — and only rule 3 does.
 - **It cannot recover intent that was never recorded.** If the reason for a constant
   lives in a deleted thread, the checker can say it is undocumented, not what it means.
 
